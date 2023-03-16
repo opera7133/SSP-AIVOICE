@@ -8,7 +8,7 @@ dicdir,System_yaya
 
 dic,main.uka
 
-//iolog, off
-log,LogFileName.log	
+iolog, off
+//log,LogFileName.log	
 //OnSecondChange無視
 ignoreiolog, ID: OnSecondChange
