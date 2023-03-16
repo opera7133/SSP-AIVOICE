@@ -83,7 +83,6 @@ SHIORI3FW.IsGhostExist
 	}
 }
 
-
 //------------------------------------------------------------------------------
 //関数名：SHIORI3FW.RefreshFMOTable(FMO名称,無視するエントリのHWND)
 //機能　：READFMOによってFMOテーブルを作る。

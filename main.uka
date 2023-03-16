@@ -20,7 +20,6 @@ OnPluginUnload.Self {
     ERASEVAR( AIVOICEBoot )
 }
 
-
 //使えるキャラクター一覧のメニューを生成する。
 OnMenuExec {
     if ( AIVOICEBoot == "False" ){
@@ -173,9 +172,11 @@ TalkText {
     //_text       = RE_REPLACE( _text  , '\\1' , "GhostName" )
     //_text       = RE_REPLACE( _text  , '\\u' , "GhostName" )
 
-    //サクラスクリプト除去
+    // 名前置き換え
     //_text         = RE_REPLACE( _text  , '\\![embed,On_一人称]' , "\![embed,On_一人称]")
     //_text         = RE_REPLACE( _text  , '\\!\[embed,On_ユーザ名\]' , "\![embed,On_ユーザ名]")
+
+    //サクラスクリプト除去
     _text         = RE_REPLACE( _text  , '\\__.\[.*?\]' , "" )
     _text         = RE_REPLACE( _text  , '\\_.\[.*?\]' , "" )
     _text         = RE_REPLACE( _text  , '\\_.' , "" )
@@ -255,9 +256,6 @@ TalkText {
 
     _text
 }
-
-
-
 
 //キャラクタごとの設定メニュー
 OnAIVOICE.CharConfigMenu {

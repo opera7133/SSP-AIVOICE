@@ -268,7 +268,7 @@ namespace MyServer
           {
             Console.WriteLine(Line);
             pTtsControl.Text = Line;
-            //pTtsControl.Play();
+            pTtsControl.Play();
           }
         }
       }
