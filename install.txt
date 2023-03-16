@@ -1,0 +1,4 @@
+charset,UTF-8
+type,plugin
+name,A.I.VOICE送信
+directory,AIVOICE

@@ -1,0 +1,352 @@
+//200
+//pluginのエラーは通知が起きない。
+
+version {
+	"origin/1.0"
+}
+OnPluginLoad.Self {
+    AIVOICEBoot = "False"
+    //起動時にserverを起動する。
+    _Server = PluginDirectory + "\dll\server.exe"
+    _devnull = EXECUTE( _Server )
+}
+
+OnPluginUnload.Self {
+    //end送信
+    FUNCTIONEX("./dll/proxy_ex.dll" ,  "/charset" , "UTF-8"  )
+    if ( AIVOICEBoot == "True" ) {
+        _devNull = FUNCTIONEX("./dll/proxy_ex.dll" ,  "./client.exe" , "end"  )
+    }
+    ERASEVAR( AIVOICEBoot )
+}
+
+
+//使えるキャラクター一覧のメニューを生成する。
+OnMenuExec {
+    if ( AIVOICEBoot == "False" ){
+        //起動と同時に処理したかったが、タイムアウトするのかSSPの起動が止まってしまう。
+        FUNCTIONEX("./dll/proxy_ex.dll" ,  "/charset" , "UTF-8"  )
+        AIVOICEBoot = FUNCTIONEX("./dll/proxy_ex.dll" , "./check.exe" )
+    }
+
+    if ( AIVOICEBoot == "True" ) {
+        _before = "\_q\n[half]【インストール済み】\n"
+		    _other = "\![*]\q[設定していないゴーストに対する読み上げ,OnAIVOICE.OtherTalk]\n"
+        _after = "\![*]\q[設定終了,]\n[half]\e"
+
+        //文字コードがsjisである必要があった。
+        FUNCTIONEX("./dll/proxy_ex.dll" ,  "/charset" , "sjis"  )
+        AIVOICE.CharList = FUNCTIONEX("./dll/proxy_ex.dll" ,  "./client.exe" , "GetCharList"  )
+
+        _CharArray = SPLIT( AIVOICE.CharList , ',' )
+        _count = ARRAYSIZE(_CharArray)
+        _AIVOICE.CharListMenu = ""
+        for _i = 0 ; _i < _count ; _i++ {
+            if ( _CharArray[_i] != "" ) {
+                _Char = _CharArray[_i]
+                _AIVOICE.CharListMenu = _AIVOICE.CharListMenu + "\![*]\q[%(_Char),OnAIVOICE.CharConfigMenu,%(_Char)]\n"
+            }
+        }
+        _AIVOICE.CharListMenu = _before + _AIVOICE.CharListMenu + _other + _after
+        _AIVOICE.CharListMenu
+    } else {
+        "AIVOICEの起動ができませんでした。"
+    }
+}
+
+
+//設定していないゴーストの読み上げの設定。
+OnAIVOICE.OtherTalk {
+        _CharArray = SPLIT( AIVOICE.CharList , ',' )
+        _count = ARRAYSIZE(_CharArray)
+        _AIVOICE.CharListMenu = ""
+        for _i = 0 ; _i < _count ; _i++ {
+            if ( _CharArray[_i] != "" ) {
+                _Char = _CharArray[_i]
+                _AIVOICE.CharListMenu = _AIVOICE.CharListMenu + "\![*]\q[%(_Char),OnAIVOICE.ConfigTalkCharactar,%(_Char)]\n"
+            }
+        }
+        _before = "\_q\n[half]【インストール済み】\n"
+        _after = "\![*]\q[読み上げない。,OnAIVOICE.ConfigTalkCharactar,None]\n[half]\e"
+
+        _AIVOICE.CharListMenu = _before + _AIVOICE.CharListMenu + _after
+        _AIVOICE.CharListMenu
+}
+OnAIVOICE.ConfigTalkCharactar {
+	_Char = reference[0]
+	if ( _Char == "None") {
+		AIVOICE.Who = ""
+		"解除したよ。"
+	} else {
+		AIVOICE.Who = reference[0]
+		"設定したよ。"
+	}
+}
+
+
+//ゴーストが喋るときの設定
+OnOtherGhostTalk {
+    if ( AIVOICEBoot == "False" ){
+        FUNCTIONEX("./dll/proxy_ex.dll" ,  "/charset" , "UTF-8"  )
+        AIVOICEBoot = FUNCTIONEX("./dll/proxy_ex.dll" , "./check.exe" )
+    }
+
+    if ( AIVOICEBoot == "True" ) {
+        TalkingGhost = reference[0]
+        _Char = TalkCharacter( TalkingGhost )
+        if ( _Char != "" ) {
+            _noSpaceChar = REPLACE(_Char, " ", "")
+            EVAL( "_Volume     = AIVOICE.%(_noSpaceChar).Volume" )
+            EVAL( "_Speed      = AIVOICE.%(_noSpaceChar).Speed" )
+            EVAL( "_Pitch      = AIVOICE.%(_noSpaceChar).Pitch" )
+            EVAL( "_PitchRange = AIVOICE.%(_noSpaceChar).PitchRange" )
+
+            if ( _Volume     == "" ) { _Volume     = 1 }
+            if ( _Speed      == "" ) { _Speed      = 1 }
+            if ( _Pitch      == "" ) { _Pitch      = 1 }
+            if ( _PitchRange == "" ) { _PitchRange = 1 }
+
+            _Script       = reference[4]
+            _VoiceText    = TalkText( _Script )
+            _args = "%(_Char),%(_Volume),%(_Speed),%(_Pitch),%(_PitchRange),%(_VoiceText)"
+
+            //Char = _Char
+            //args = _args
+            //VoiceText    = _VoiceText
+            //。\nを変換する為。これのみの出力でバルーンが削除される場合、無効に空が飛び、現在の読み上げが止まってしまう問題があった。
+            if ( _VoiceText != "" && _VoiceText != "。" ) {
+                FUNCTIONEX("./dll/proxy_ex.dll" ,  "/charset" , "UTF-8"  )
+                _devnull   = FUNCTIONEX("./dll/proxy_ex.dll" ,  "./client.exe" , "%(_args)" )
+            }
+        }
+    }
+}
+
+TalkCharacter {
+    //発言したゴーストmenu名
+    _TalkingGhost = _argv[0]
+    _AIVOICE.CharList = GETVARLIST( "AIVOICE.WhoTalker." )
+    _Talker = ""
+    for _i = 0 ; _i < ARRAYSIZE( _AIVOICE.CharList ) ; _i++ {
+        if ( _Talker != "" ) {
+            break
+        }
+        //空配列対策
+        if ( _AIVOICE.CharList[_i] == "" ) {
+            continue
+        }
+
+        //Voice キャラ名
+        _TalkCharName = REPLACE( _AIVOICE.CharList[_i] , "AIVOICE.WhoTalker." , "" )
+
+        //その子の呼び出したいゴーストリスト
+        EVAL( "_SSP.CharList = %(_AIVOICE.CharList[_i])" )
+        _CharListArray = SPLIT( _SSP.CharList , "," )
+
+        for _n = 0 ; _n < ARRAYSIZE( _CharListArray ) ; _n++ {
+            //今回呼ばれたゴーストがマッチするかどうか
+            if ( _TalkingGhost == _CharListArray[_n] ) {
+                _Talker = _TalkCharName
+                break
+            }
+        }
+    }
+    //もし設定がなかったら喋る子
+    if ( _Talker == "" ) {
+        //Whoが存在しなかった場合はInt的な扱いになるのか。
+        if ( ISVAR( "AIVOICE.Who" ) != 0 ) {
+            _Talker = AIVOICE.Who
+        }
+    }
+    _Talker
+}
+
+TalkText {
+    _Script = _argv[0]
+    _text         = RE_REPLACE( _Script , '' , "" )
+
+    ////MainGhostName
+    //_text       = RE_REPLACE( _text  , '\\0' , "MainGhostName" )
+    //_text       = RE_REPLACE( _text  , '\\h' , "MainGhostName" )
+    //
+    ////SubGhostName
+    //_text       = RE_REPLACE( _text  , '\\1' , "GhostName" )
+    //_text       = RE_REPLACE( _text  , '\\u' , "GhostName" )
+
+    //サクラスクリプト除去
+    //_text         = RE_REPLACE( _text  , '\\![embed,On_一人称]' , "\![embed,On_一人称]")
+    //_text         = RE_REPLACE( _text  , '\\!\[embed,On_ユーザ名\]' , "\![embed,On_ユーザ名]")
+    _text         = RE_REPLACE( _text  , '\\__.\[.*?\]' , "" )
+    _text         = RE_REPLACE( _text  , '\\_.\[.*?\]' , "" )
+    _text         = RE_REPLACE( _text  , '\\_.' , "" )
+    _text         = RE_REPLACE( _text  , '\\.\[.*?\]' , "" )
+    _text         = RE_REPLACE( _text  , '\\w[0-9]' , "" )
+
+    //バルーンの初期化だと/nが飛んでいるように見える。
+    _text         = RE_REPLACE( _text  , '\\n' , "。" )
+    _text         = RE_REPLACE( _text  , '\\.' , "" )
+
+    _text         = REPLACE( _text  , ' ' ,  "、" )
+    _text         = REPLACE( _text  , '　' , "、" )
+
+    _text         = REPLACE( _text  , '(' , "" )
+    _text         = REPLACE( _text  , ')' , "" )
+    _text         = REPLACE( _text  , '（' , "" )
+    _text         = REPLACE( _text  , '）' , "" )
+    _text         = REPLACE( _text  , '「' , "" )
+    _text         = REPLACE( _text  , '」' , "" )
+    _text         = REPLACE( _text  , '【' , "" )
+    _text         = REPLACE( _text  , '】' , "" )
+
+    _text         = REPLACE( _text  , '、、、、、、' , "、" )
+    _text         = REPLACE( _text  , '、、、、、' , "、" )
+    _text         = REPLACE( _text  , '、、、、' , "、" )
+    _text         = REPLACE( _text  , '、、、' , "、" )
+    _text         = REPLACE( _text  , '、、' , "、" )
+
+    _text         = REPLACE( _text  , '…………………' , "…" )
+    _text         = REPLACE( _text  , '………………' , "…" )
+    _text         = REPLACE( _text  , '……………' , "…" )
+    _text         = REPLACE( _text  , '…………' , "…" )
+    _text         = REPLACE( _text  , '………' , "…" )
+    _text         = REPLACE( _text  , '……' , "…" )
+
+    //\n代用
+    _text         = REPLACE( _text  , '。。。。。。。。。。。。。。。。' , "。" )
+    _text         = REPLACE( _text  , '。。。。。。。。。。。。。。。' , "。" )
+    _text         = REPLACE( _text  , '。。。。。。。。。。。。。。' , "。" )
+    _text         = REPLACE( _text  , '。。。。。。。。。。。。。' , "。" )
+    _text         = REPLACE( _text  , '。。。。。。。。。。。。' , "。" )
+    _text         = REPLACE( _text  , '。。。。。。。。。。。' , "。" )
+    _text         = REPLACE( _text  , '。。。。。。。。。。' , "。" )
+    _text         = REPLACE( _text  , '。。。。。。。。。' , "。" )
+    _text         = REPLACE( _text  , '。。。。。。。。' , "。" )
+    _text         = REPLACE( _text  , '。。。。。。。' , "。" )
+    _text         = REPLACE( _text  , '。。。。。。' , "。" )
+    _text         = REPLACE( _text  , '。。。。。' , "。" )
+    _text         = REPLACE( _text  , '。。。。' , "。" )
+    _text         = REPLACE( _text  , '。。。' , "。" )
+    _text         = REPLACE( _text  , '。。' , "。" )
+
+    _text         = REPLACE( _text  , '・・・・・・・' , "・" )
+    _text         = REPLACE( _text  , '・・・・・・' , "・" )
+    _text         = REPLACE( _text  , '・・・・・' , "・" )
+    _text         = REPLACE( _text  , '・・・・' , "・" )
+    _text         = REPLACE( _text  , '・・・' , "・" )
+    _text         = REPLACE( _text  , '・・' , "・" )
+
+    _text         = REPLACE( _text  , '？' , '?' )
+    _text         = REPLACE( _text  , '?。', '?')
+    _text         = REPLACE( _text  , '！' , '!' )
+    _text         = REPLACE( _text  , '!。', '!')
+
+    _text         = REPLACE( _text  , '!!!!' , "!" )
+    _text         = REPLACE( _text  , '!!!' , "!" )
+    _text         = REPLACE( _text  , '!!' , "!" )
+    _text         = REPLACE( _text  , '????' , "?" )
+    _text         = REPLACE( _text  , '???' , "?" )
+    _text         = REPLACE( _text  , '??' , "?" )
+    _text         = REPLACE( _text  , '!?!?' , '!?' )
+    _text         = REPLACE( _text  , '?!?!' , '?!' )
+
+    if (SUBSTR(_text,0,1) == "。") {
+      _text = ERASE(_text,0,1)
+    }
+
+    _text
+}
+
+
+
+
+//キャラクタごとの設定メニュー
+OnAIVOICE.CharConfigMenu {
+    //引数に必要
+    _Char = reference[0]
+
+    _noSpaceChar = REPLACE(_Char, " ", "")
+    EVAL( "_Volume     = AIVOICE.%(_noSpaceChar).Volume" )
+    EVAL( "_Speed      = AIVOICE.%(_noSpaceChar).Speed" )
+    EVAL( "_Pitch      = AIVOICE.%(_noSpaceChar).Pitch" )
+    EVAL( "_PitchRange = AIVOICE.%(_noSpaceChar).PitchRange" )
+    if ( _Volume     == "" ) { _Volume     = 1 }
+    if ( _Speed      == "" ) { _Speed      = 1.2 }
+    if ( _Pitch      == "" ) { _Pitch      = 1 }
+    if ( _PitchRange == "" ) { _PitchRange = 1 }
+    _AIVOICE.MainOptions = "/
+            \![*]\q[%(_Volume   )  : Volume    ,OnAIVOICE.CharOption,%(_Char),Volume]\n/
+            \![*]\q[%(_Speed    )  : Speed     ,OnAIVOICE.CharOption,%(_Char),Speed]\n/
+            \![*]\q[%(_Pitch     ) : Pitch     ,OnAIVOICE.CharOption,%(_Char),Pitch]\n/
+            \![*]\q[%(_PitchRange) : PitchRange,OnAIVOICE.CharOption,%(_Char),PitchRange]\n/
+            -----------\n"
+
+    ////誰が誰にしゃべらせるか。,
+    _AIVOICE.WhoTalker = "\![*]\q[喋らせる対象,OnAIVOICE.WhoTalker,%(_Char)]\n"
+
+    _before = "\_q\n[half]【0~5で設定してください】\n"
+	  _after = "\![*]\q[設定終了,]\n[half]\e"
+    _AIVOICE.CharListMenu = _before + _AIVOICE.MainOptions + _AIVOICE.WhoTalker + _after
+    _AIVOICE.CharListMenu
+}
+
+
+OnAIVOICE.WhoTalker {
+    AIVOICE.Char = reference[0]
+    _noSpaceChar = REPLACE(AIVOICE.Char, " ", "")
+    EVAL( "_Kizon = AIVOICE.WhoTalker.%(_noSpaceChar)" )
+    "\_qこの声でどのゴーストを喋らせたいか入力してください。\n/
+    入力はゴースト切り替えで表示される名前です。\n/
+    複数入力する場合は「,」で区切ってください。\n/
+    \![open,inputbox,OnAIVOICE.SetWhoTalker,0,%(_Kizon)]\e"
+}
+
+
+
+OnAIVOICE.SetWhoTalker {
+    _Chars = reference[0]
+    _noSpaceChar = REPLACE(AIVOICE.Char, " ", "")
+    EVAL( "AIVOICE.WhoTalker.%(_noSpaceChar) = %(CHR(34))%(_Chars)%(CHR(34))" )
+    ///if ( _Chars == "" ) {
+    ///    ERASEVAR( "AIVOICE.WhoTalker.%(_noSpaceChar)" )
+    ///} else {
+    ///    EVAL( "AIVOICE.WhoTalker.%(_noSpaceChar) = %(CHR(34))%(_Chars)%(CHR(34))" )
+    ///}
+    AIVOICE.Char   = "" 
+}
+
+
+OnAIVOICE.CharOption {
+    AIVOICE.Char   = reference[0]
+    AIVOICE.Option = reference[1]
+
+    "\![open,inputbox,OnAIVOICE.SetOption]"
+}
+
+
+OnAIVOICE.SetOption {
+    _num = TOREAL( reference[0] )
+    _noSpaceChar = REPLACE(AIVOICE.Char, " ", "")
+    if ( AIVOICE.Option == "Volume" && (_num < 0 || 5 < _num) ) {
+        "0.0から5.0までの値を半角で入力してください。\![open,inputbox,OnAIVOICE.SetOption]"
+    } elseif ( AIVOICE.Option == "Speed" && (_num < 0.5 || 4 < _num) ) {
+        "0.5から4.0までの値を半角で入力してください。\![open,inputbox,OnAIVOICE.SetOption]"
+    } elseif ( AIVOICE.Option == "Pitch" && (_num < 0.5 || 2 < _num) ) {
+        "0.5から2.0までの値を半角で入力してください。\![open,inputbox,OnAIVOICE.SetOption]"
+    } elseif ( AIVOICE.Option == "PitchRange" && (_num < 0 || 2 < _num) ) {
+        "0.0から2.0までの値を半角で入力してください。\![open,inputbox,OnAIVOICE.SetOption]"
+    } else {
+        _tempNum = (ROUND(_num*10))/10
+        EVAL( "AIVOICE.%(_noSpaceChar).%(AIVOICE.Option) = %(_tempNum)" )
+        //確認のメニューはさっきのを呼びなおす
+        //設定に戻る。
+        //設定終了
+        _before = "\_q\n[half]\n"
+        _mid    = "\![*]\q[設定に戻る。,OnAIVOICE.CharConfigMenu,%(AIVOICE.Char)]\n"
+        _after  = "\![*]\q[設定終了,]\n[half]\e"
+        _text   = _before + _mid + _after
+        _text
+
+        AIVOICE.Char   = "" 
+        AIVOICE.Option = "" 
+    }
+}
