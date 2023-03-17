@@ -257,8 +257,8 @@ namespace MyServer
       CurrentPreset += "\"Speed\":" + Convert.ToDouble(Options[2]) + ",";
       CurrentPreset += "\"Pitch\":" + Convert.ToDouble(Options[3]) + ",";
       CurrentPreset += "\"PitchRange\":" + Convert.ToDouble(Options[4]) + ",";
-      CurrentPreset += "\"MiddlePause\":" + Convert.ToDouble(Options[5]) + ",";
-      CurrentPreset += "\"LongPause\":" + Convert.ToDouble(Options[6]) + ",";
+      CurrentPreset += "\"MiddlePause\":" + Convert.ToUInt32(Options[5]) + ",";
+      CurrentPreset += "\"LongPause\":" + Convert.ToUInt32(Options[6]) + ",";
       CurrentPreset += "\"Styles\":[{\"Name\":\"J\", \"Value\":" + Convert.ToDouble(Options[7]) + "},";
       CurrentPreset += "{\"Name\":\"A\", \"Value\":" + Convert.ToDouble(Options[8]) + "},";
       CurrentPreset += "{\"Name\":\"S\", \"Value\":" + Convert.ToDouble(Options[9]) + "}]";
