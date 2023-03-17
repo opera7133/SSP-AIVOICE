@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using AI.Talk.Editor.Api;
 //  csc /r:"C:\Program Files/\AI/\AIVoice/\AIVoiceEditor/\AI.Talk.Editor.Api.dll"
 

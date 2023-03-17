@@ -95,19 +95,29 @@ OnOtherGhostTalk {
         _Char = TalkCharacter( TalkingGhost )
         if ( _Char != "" ) {
             _noSpaceChar = REPLACE(_Char, " ", "")
-            EVAL( "_Volume     = AIVOICE.%(_noSpaceChar).Volume" )
-            EVAL( "_Speed      = AIVOICE.%(_noSpaceChar).Speed" )
-            EVAL( "_Pitch      = AIVOICE.%(_noSpaceChar).Pitch" )
-            EVAL( "_PitchRange = AIVOICE.%(_noSpaceChar).PitchRange" )
+            EVAL( "_Volume      = AIVOICE.%(_noSpaceChar).Volume" )
+            EVAL( "_Speed       = AIVOICE.%(_noSpaceChar).Speed" )
+            EVAL( "_Pitch       = AIVOICE.%(_noSpaceChar).Pitch" )
+            EVAL( "_PitchRange  = AIVOICE.%(_noSpaceChar).PitchRange" )
+            EVAL( "_MiddlePause = AIVOICE.%(_noSpaceChar).MiddlePause" )
+            EVAL( "_LongPause   = AIVOICE.%(_noSpaceChar).LongPause" )
+            EVAL( "_StyleJ      = AIVOICE.%(_noSpaceChar).StyleJ" )
+            EVAL( "_StyleA      = AIVOICE.%(_noSpaceChar).StyleA" )
+            EVAL( "_StyleS      = AIVOICE.%(_noSpaceChar).StyleS" )
 
-            if ( _Volume     == "" ) { _Volume     = 1 }
-            if ( _Speed      == "" ) { _Speed      = 1 }
-            if ( _Pitch      == "" ) { _Pitch      = 1 }
-            if ( _PitchRange == "" ) { _PitchRange = 1 }
+            if ( _Volume      == "" ) { _Volume      = 1 }
+            if ( _Speed       == "" ) { _Speed       = 1.2 }
+            if ( _Pitch       == "" ) { _Pitch       = 1 }
+            if ( _PitchRange  == "" ) { _PitchRange  = 1 }
+            if ( _MiddlePause == "" ) { _MiddlePause = 150 }
+            if ( _LongPause   == "" ) { _LongPause  = 370 }
+            if ( _StyleJ      == "" ) { _StyleJ      = 0 }
+            if ( _StyleA      == "" ) { _StyleA      = 0 }
+            if ( _StyleS      == "" ) { _StyleS      = 0 }
 
             _Script       = reference[4]
             _VoiceText    = TalkText( _Script )
-            _args = "%(_Char),%(_Volume),%(_Speed),%(_Pitch),%(_PitchRange),%(_VoiceText)"
+            _args = "%(_Char),%(_Volume),%(_Speed),%(_Pitch),%(_PitchRange),%(_MiddlePause),%(_LongPause),%(_StyleJ),%(_StyleA),%(_StyleS),%(_VoiceText)"
 
             //Char = _Char
             //args = _args
@@ -173,9 +183,9 @@ TalkText {
     //_text       = RE_REPLACE( _text  , '\\u' , "GhostName" )
 
     // 名前置き換え
-    //_text         = RE_REPLACE( _text  , '\\![embed,On_一人称]' , "\![embed,On_一人称]")
-    //_text         = RE_REPLACE( _text  , '\\!\[embed,On_ユーザ名\]' , "\![embed,On_ユーザ名]")
-
+    //_text         = REPLACE( _text  , '\![embed,On_一人称]' , "私")
+    //_text         = REPLACE( _text  , '\![embed,On_ユーザ名]' , "マスター")
+    
     //サクラスクリプト除去
     _text         = RE_REPLACE( _text  , '\\__.\[.*?\]' , "" )
     _text         = RE_REPLACE( _text  , '\\_.\[.*?\]' , "" )
@@ -250,6 +260,8 @@ TalkText {
     _text         = REPLACE( _text  , '!?!?' , '!?' )
     _text         = REPLACE( _text  , '?!?!' , '?!' )
 
+    _text         = REPLACE( _text  , '-----------', '')
+
     if (SUBSTR(_text,0,1) == "。") {
       _text = ERASE(_text,0,1)
     }
@@ -263,19 +275,37 @@ OnAIVOICE.CharConfigMenu {
     _Char = reference[0]
 
     _noSpaceChar = REPLACE(_Char, " ", "")
-    EVAL( "_Volume     = AIVOICE.%(_noSpaceChar).Volume" )
-    EVAL( "_Speed      = AIVOICE.%(_noSpaceChar).Speed" )
-    EVAL( "_Pitch      = AIVOICE.%(_noSpaceChar).Pitch" )
-    EVAL( "_PitchRange = AIVOICE.%(_noSpaceChar).PitchRange" )
-    if ( _Volume     == "" ) { _Volume     = 1 }
-    if ( _Speed      == "" ) { _Speed      = 1.2 }
-    if ( _Pitch      == "" ) { _Pitch      = 1 }
-    if ( _PitchRange == "" ) { _PitchRange = 1 }
+    EVAL( "_Volume      = AIVOICE.%(_noSpaceChar).Volume" )
+    EVAL( "_Speed       = AIVOICE.%(_noSpaceChar).Speed" )
+    EVAL( "_Pitch       = AIVOICE.%(_noSpaceChar).Pitch" )
+    EVAL( "_PitchRange  = AIVOICE.%(_noSpaceChar).PitchRange" )
+    EVAL( "_MiddlePause = AIVOICE.%(_noSpaceChar).MiddlePause" )
+    EVAL( "_LongPause   = AIVOICE.%(_noSpaceChar).LongPause" )
+    EVAL( "_StyleJ      = AIVOICE.%(_noSpaceChar).StyleJ" )
+    EVAL( "_StyleA      = AIVOICE.%(_noSpaceChar).StyleA" )
+    EVAL( "_StyleS      = AIVOICE.%(_noSpaceChar).StyleS" )
+
+    if ( _Volume      == "" ) { _Volume      = 1 }
+    if ( _Speed       == "" ) { _Speed       = 1.2 }
+    if ( _Pitch       == "" ) { _Pitch       = 1 }
+    if ( _PitchRange  == "" ) { _PitchRange  = 1 }
+    if ( _MiddlePause == "" ) { _MiddlePause = 150 }
+    if ( _LongPause   == "" ) { _LongPause  = 370 }
+    if ( _StyleJ      == "" ) { _StyleJ      = 0 }
+    if ( _StyleA      == "" ) { _StyleA      = 0 }
+    if ( _StyleS      == "" ) { _StyleS      = 0 }
+
     _AIVOICE.MainOptions = "/
-            \![*]\q[%(_Volume   )  : Volume    ,OnAIVOICE.CharOption,%(_Char),Volume]\n/
-            \![*]\q[%(_Speed    )  : Speed     ,OnAIVOICE.CharOption,%(_Char),Speed]\n/
-            \![*]\q[%(_Pitch     ) : Pitch     ,OnAIVOICE.CharOption,%(_Char),Pitch]\n/
-            \![*]\q[%(_PitchRange) : PitchRange,OnAIVOICE.CharOption,%(_Char),PitchRange]\n/
+            \![*]\q[%(_Volume     ) : Volume     ,OnAIVOICE.CharOption,%(_Char),Volume]\n/
+            \![*]\q[%(_Speed      ) : Speed      ,OnAIVOICE.CharOption,%(_Char),Speed]\n/
+            \![*]\q[%(_Pitch      ) : Pitch      ,OnAIVOICE.CharOption,%(_Char),Pitch]\n/
+            \![*]\q[%(_PitchRange ) : PitchRange ,OnAIVOICE.CharOption,%(_Char),PitchRange]\n/
+            \![*]\q[%(_MiddlePause) : MiddlePause,OnAIVOICE.CharOption,%(_Char),MiddlePause]\n/
+            \![*]\q[%(_LongPause  ) : LongPause  ,OnAIVOICE.CharOption,%(_Char),LongPause]\n/
+            -----------\n/
+            \![*]\q[%(_StyleJ     ) : StyleJ     ,OnAIVOICE.CharOption,%(_Char),StyleJ]\n/
+            \![*]\q[%(_StyleA     ) : StyleA     ,OnAIVOICE.CharOption,%(_Char),StyleA]\n/
+            \![*]\q[%(_StyleS     ) : StyleS     ,OnAIVOICE.CharOption,%(_Char),StyleS]\n/
             -----------\n"
 
     ////誰が誰にしゃべらせるか。,
@@ -332,9 +362,24 @@ OnAIVOICE.SetOption {
         "0.5から2.0までの値を半角で入力してください。\![open,inputbox,OnAIVOICE.SetOption]"
     } elseif ( AIVOICE.Option == "PitchRange" && (_num < 0 || 2 < _num) ) {
         "0.0から2.0までの値を半角で入力してください。\![open,inputbox,OnAIVOICE.SetOption]"
+    } elseif ( AIVOICE.Option == "MiddlePause" && (_num < 80 || 500 < _num) ) {
+        "80から500までの値を半角で入力してください。\![open,inputbox,OnAIVOICE.SetOption]"
+    } elseif ( AIVOICE.Option == "LongPause" && (_num < 80 || 2000 < _num) ) {
+        "80から2000までの値を半角で入力してください。\![open,inputbox,OnAIVOICE.SetOption]"
+    } elseif ( AIVOICE.Option == "StyleJ" && (_num < 0 || 1 < _num) ) {
+        "0.0から1.0までの値を半角で入力してください。\![open,inputbox,OnAIVOICE.SetOption]"
+    } elseif ( AIVOICE.Option == "StyleA" && (_num < 0 || 1 < _num) ) {
+        "0.0から1.0までの値を半角で入力してください。\![open,inputbox,OnAIVOICE.SetOption]"
+    } elseif ( AIVOICE.Option == "StyleS" && (_num < 0 || 1 < _num) ) {
+        "0.0から1.0までの値を半角で入力してください。\![open,inputbox,OnAIVOICE.SetOption]"
     } else {
-        _tempNum = (ROUND(_num*10))/10
-        EVAL( "AIVOICE.%(_noSpaceChar).%(AIVOICE.Option) = %(_tempNum)" )
+        if ( AIVOICE.Option == "MiddlePause" || AIVOICE.Option == "LongPause" ) {
+          _tempNum = ROUND(_num)
+          EVAL( "AIVOICE.%(_noSpaceChar).%(AIVOICE.Option) = %(_tempNum)" )
+        } else {
+          _tempNum = (ROUND(_num*100))/100
+          EVAL( "AIVOICE.%(_noSpaceChar).%(AIVOICE.Option) = %(_tempNum)" )
+        }
         //確認のメニューはさっきのを呼びなおす
         //設定に戻る。
         //設定終了

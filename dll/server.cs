@@ -213,6 +213,9 @@ namespace MyServer
       }
     }
 
+    // arg: string
+    // 形式："ボイス名,音量,話速,高さ,抑揚,短ポーズ(ms),長ポーズ(ms),喜び,怒り,悲しみ"
+    // 例　："結月 ゆかり,1,1.2,1,1,150,370,0,0,0,こんにちは"
     public void talk(string arg)
     {
       pTtsControl = new TtsControl();
@@ -229,23 +232,42 @@ namespace MyServer
       char[] sep = new char[] { ',' };
       string[] head = arg.Split(sep, 2);
       string CharPreset = head[0];
-      pTtsControl.CurrentVoicePresetName = CharPreset;
+      string[] presets = pTtsControl.VoicePresetNames;
+      bool result = Array.Exists(presets, preset => preset == CharPreset + " 伺か一時プリセット");
+      if (!result)
+      {
+        Match VoiceName = Regex.Match(pTtsControl.GetVoicePreset(CharPreset), "\"VoiceName\":\"([^\"]*)\"");
+        var initPreset = new Dictionary<string, string>(){
+          {"PresetName", CharPreset + " 伺か一時プリセット"},
+          {"VoiceName", VoiceName.Groups[1].Value},
+        };
+        pTtsControl.AddVoicePreset(JsonConvert.SerializeObject(initPreset));
+      }
+      pTtsControl.CurrentVoicePresetName = CharPreset + " 伺か一時プリセット";
       Program.TalkingChar = CharPreset;
       Console.WriteLine("Char = " + CharPreset);
 
-      string[] Options = arg.Split(sep, 6);
+      string[] Options = arg.Split(sep, 11);
 
-      //共通項が4
-      var masterControl = new Dictionary<string, Double>(){
-          {"Volume", Convert.ToDouble(Options[1])},
-          {"Speed", Convert.ToDouble(Options[2])},
-          {"Pitch", Convert.ToDouble(Options[3])},
-          {"PitchRange", Convert.ToDouble(Options[4])}
-        };
-      pTtsControl.MasterControl = JsonConvert.SerializeObject(masterControl, Formatting.Indented);
+      //共通項が9
+      string CurrentPreset = "{";
+      //多次元連想配列の作り方がわからない
+      CurrentPreset += "\"PresetName\":\"" + CharPreset + " 伺か一時プリセット" + "\",";
+      CurrentPreset += "\"Volume\":" + Convert.ToDouble(Options[1]) + ",";
+      CurrentPreset += "\"Speed\":" + Convert.ToDouble(Options[2]) + ",";
+      CurrentPreset += "\"Pitch\":" + Convert.ToDouble(Options[3]) + ",";
+      CurrentPreset += "\"PitchRange\":" + Convert.ToDouble(Options[4]) + ",";
+      CurrentPreset += "\"MiddlePause\":" + Convert.ToDouble(Options[5]) + ",";
+      CurrentPreset += "\"LongPause\":" + Convert.ToDouble(Options[6]) + ",";
+      CurrentPreset += "\"Styles\":[{\"Name\":\"J\", \"Value\":" + Convert.ToDouble(Options[7]) + "},";
+      CurrentPreset += "{\"Name\":\"A\", \"Value\":" + Convert.ToDouble(Options[8]) + "},";
+      CurrentPreset += "{\"Name\":\"S\", \"Value\":" + Convert.ToDouble(Options[9]) + "}]";
+      CurrentPreset += "}";
+
+      pTtsControl.SetVoicePreset(CurrentPreset);
 
       string[] MySep = { "MySep" };
-      string VoiceText = Options[5];
+      string VoiceText = Options[10];
 
       //バルーン空打ち対策
       string CheckText = VoiceText;
