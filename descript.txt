@@ -29,4 +29,4 @@ otherghosttalk,before
 id,3bfe1920-c3a2-11ed-a901-0800200c9a66
 
 //更新URL
-homeurl,https://dl.wmsci.com/plugins/AIVOICE/
+homeurl,https://github.com/opera7133/SSP-AIVOICE
